@@ -1,43 +1,4 @@
-<script type="text/javascript">
-        var gk_isXlsx = false;
-        var gk_xlsxFileLookup = {};
-        var gk_fileData = {};
-        function filledCell(cell) {
-          return cell !== '' && cell != null;
-        }
-        function loadFileData(filename) {
-        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-            try {
-                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-                var firstSheetName = workbook.SheetNames[0];
-                var worksheet = workbook.Sheets[firstSheetName];
-
-                // Convert sheet to JSON to filter blank rows
-                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                // Filter out blank rows (rows where all cells are empty, null, or undefined)
-                var filteredData = jsonData.filter(row => row.some(filledCell));
-
-                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
-                var headerRowIndex = filteredData.findIndex((row, index) =>
-                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-                );
-                // Fallback
-                if (headerRowIndex === -1 || headerRowIndex > 25) {
-                  headerRowIndex = 0;
-                }
-
-                // Convert filtered JSON back to CSV
-                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
-                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-                return csv;
-            } catch (e) {
-                console.error(e);
-                return "";
-            }
-        }
-        return gk_fileData[filename] || "";
-        }
-        </script><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -51,11 +12,12 @@
   <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.20.6/babel.min.js"></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap" async defer></script>
 </head>
 <body>
   <div id="root"></div>
   <script type="text/babel">
-    const { useState } = React;
+    const { useState, useEffect } = React;
 
     const App = () => {
       const [currentView, setCurrentView] = useState('home');
@@ -107,7 +69,7 @@
                     <a href="#" onClick={() => setCurrentView('home')} className="hover:underline">Home</a>
                     <a href="#" onClick={() => setCurrentView('about')} className="hover:underline">About</a>
                     <a href="#" onClick={() => setCurrentView('contact')} className="hover:underline">Contact</a>
-                    <button onClick={() => setCurrentView('login')} className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">Get Started</button>
+                    <button onClick={() => setCurrentView('services')} className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">Get Started</button>
                   </nav>
                 </header>
 
@@ -121,11 +83,17 @@
                   </div>
                 </section>
 
+                {/* Testimonials Section */}
+                <section className="py-12 px-6 bg-white text-center">
+                  <h2 className="text-3xl font-bold mb-4">What Our Clients Say</h2>
+                  <p className="text-lg">"Elite Truck Dispatching saved us hours every week with their 24/7 support. Highly recommend!" - John D., USA</p>
+                </section>
+
                 {/* Services Section */}
-                <section className="py-12 px-6 bg-white">
+                <section className="py-12 px-6 bg-gray-100" id="services">
                   <h2 className="text-3xl font-bold text-center mb-6">Our Services</h2>
                   <p className="text-center mb-8">We offer comprehensive dispatch solutions to keep your trucks loaded and on the road.</p>
-                  <div id="lead-form" className="max-w-md mx-auto bg-gray-100 p-6 rounded shadow-md">
+                  <div id="lead-form" className="max-w-md mx-auto bg-white p-6 rounded shadow-md">
                     <form onSubmit={handleFormSubmit} className="space-y-4">
                       <input
                         type="text"
@@ -163,16 +131,18 @@
                         type="submit"
                         className="w-full bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700 transition"
                       >
-                        Submit
+                        Request a Quote
                       </button>
                     </form>
+                    <button onClick={() => alert('Call us at +1-800-555-1234')} className="mt-4 w-full bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition">Call Now</button>
                   </div>
                 </section>
 
                 {/* Pricing Section */}
-                <section className="py-12 px-6 bg-gray-200 text-center">
+                <section className="py-12 px-6 bg-white text-center">
                   <h2 className="text-3xl font-bold mb-4">Pricing</h2>
-                  <p className="text-2xl">$1000+/month</p>
+                  <p className="text-lg">Basic: $1000/month (24/7 support, load planning)</p>
+                  <p className="text-lg">Premium: $1500/month (includes tracking, analytics)</p>
                 </section>
               </div>
             );
@@ -259,14 +229,17 @@
             return (
               <div className="p-6">
                 <h2 className="text-2xl font-bold mb-4">About Us</h2>
-                <p>Learn more about Elite Truck Dispatching and our mission.</p>
+                <p>Elite Truck Dispatching is dedicated to providing top-notch logistics solutions across USA and Canada with 24/7 support.</p>
               </div>
             );
           case 'contact':
             return (
-              <div className="p-6">
+              <div className="p-6 max-w-md mx-auto bg-white rounded shadow-md">
                 <h2 className="text-2xl font-bold mb-4">Contact Us</h2>
-                <p>Get in touch with us for more information.</p>
+                <p className="mb-4">Phone: +1-800-555-1234</p>
+                <p className="mb-4">Email: info@elitetruckdispatching.com</p>
+                <p className="mb-4">Address: 123 Logistics Lane, Houston, TX</p>
+                <div id="map" className="h-64 rounded" style={{ background: '#ccc' }}></div>
               </div>
             );
           default:
@@ -274,10 +247,18 @@
         }
       };
 
+      useEffect(() => {
+        if (currentView === 'contact') {
+          const map = new window.google.maps.Map(document.getElementById('map'), {
+            center: { lat: 29.7604, lng: -95.3698 }, // Houston, TX
+            zoom: 12,
+          });
+        }
+      }, [currentView]);
+
       return (
         <div className="min-h-screen bg-gray-100">
           {renderView()}
-          {/* Footer */}
           <footer className="bg-blue-600 text-white p-4 mt-8 text-center">
             <p>© 2025 Elite Truck Dispatching. All rights reserved.</p>
             <p>Contact: info@[yourwebsite.com] | USA/Canada Dispatching Services</p>
