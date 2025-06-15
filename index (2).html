@@ -1,0 +1,292 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Elite Truck Dispatching - Fast, Reliable Logistics Solutions for USA and Canada">
+  <meta name="keywords" content="truck dispatching, freight management, logistics USA, Canada trucking, truck dispatcher">
+  <meta name="author" content="Elite Truck Dispatching">
+  <meta name="robots" content="index, follow">
+  <title>Elite Truck Dispatching</title>
+  <link href="./dist/tailwind.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.20.6/babel.min.js"></script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState } = React;
+
+    const App = () => {
+      const [currentView, setCurrentView] = useState('home');
+      const [userRole, setUserRole] = useState(null);
+      const [formData, setFormData] = useState({ name: '', email: '', phone: '', company: '' });
+      const [loginData, setLoginData] = useState({ username: '', password: '' });
+
+      const t = (key) => key;
+
+      const handleLogin = (e) => {
+        e.preventDefault();
+        if (loginData.username === 'admin' && loginData.password === 'password') {
+          setUserRole('admin');
+          setCurrentView('dashboard');
+          alert('Login successful!');
+        } else if (loginData.username === 'dispatcher' && loginData.password === 'password') {
+          setUserRole('dispatcher');
+          setCurrentView('dashboard');
+          alert('Login successful!');
+        } else {
+          alert('Invalid credentials');
+        }
+      };
+
+      const handleLogout = () => {
+        setUserRole(null);
+        setCurrentView('home');
+        alert('Logged out successfully');
+      };
+
+      const handleFormSubmit = (e) => {
+        e.preventDefault();
+        console.log('Lead captured:', formData);
+        alert('Thank you! We’ll contact you soon.');
+        setFormData({ name: '', email: '', phone: '', company: '' });
+      };
+
+      const renderView = () => {
+        switch (currentView) {
+          case 'home':
+            return (
+              <div>
+                {/* Header */}
+                <header className="bg-white p-4 shadow-md flex justify-between items-center">
+                  <div className="flex items-center">
+                    <span className="text-2xl font-bold text-red-600">🚛 Elite Truck Dispatching</span>
+                  </div>
+                  <nav className="space-x-4">
+                    <a href="#" onClick={() => setCurrentView('home')} className="hover:underline">Home</a>
+                    <a href="#" onClick={() => setCurrentView('about')} className="hover:underline">About</a>
+                    <a href="#" onClick={() => setCurrentView('contact')} className="hover:underline">Contact</a>
+                    <button onClick={() => setCurrentView('login')} className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">Get Started</button>
+                  </nav>
+                </header>
+
+                {/* Hero Section */}
+                <section className="relative bg-gray-200 h-96 flex items-center justify-center">
+                  <img src="https://via.placeholder.com/1200x400" alt="Truck on highway" className="absolute inset-0 w-full h-full object-cover opacity-50" />
+                  <div className="relative z-10 text-center text-white">
+                    <h1 className="text-4xl font-bold mb-4">Truck Dispatch Services</h1>
+                    <p className="text-lg mb-6">We handle the loads, so you can focus on driving.</p>
+                    <button onClick={() => setCurrentView('services')} className="bg-red-600 text-white px-6 py-3 rounded hover:bg-red-700">Get Started</button>
+                  </div>
+                </section>
+
+                {/* Services Section */}
+                <section className="py-12 px-6 bg-white">
+                  <h2 className="text-3xl font-bold text-center mb-6">Our Services</h2>
+                  <p className="text-center mb-8">We offer comprehensive dispatch solutions to keep your trucks loaded and on the road.</p>
+                  <div id="lead-form" className="max-w-md mx-auto bg-gray-100 p-6 rounded shadow-md">
+                    <form onSubmit={handleFormSubmit} className="space-y-4">
+                      <input
+                        type="text"
+                        placeholder="Name"
+                        className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-600"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        required
+                      />
+                      <input
+                        type="email"
+                        placeholder="Email"
+                        className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-600"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        required
+                      />
+                      <input
+                        type="tel"
+                        placeholder="Phone"
+                        className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-600"
+                        value={formData.phone}
+                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                        required
+                      />
+                      <input
+                        type="text"
+                        placeholder="Company"
+                        className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-600"
+                        value={formData.company}
+                        onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                        required
+                      />
+                      <button
+                        type="submit"
+                        className="w-full bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700 transition"
+                      >
+                        Submit
+                      </button>
+                    </form>
+                  </div>
+                </section>
+
+                {/* Pricing Section */}
+                <section className="py-12 px-6 bg-gray-200 text-center">
+                  <h2 className="text-3xl font-bold mb-4">Pricing</h2>
+                  <p className="text-2xl">$1000+/month</p>
+                </section>
+              </div>
+            );
+          case 'login':
+            return (
+              <div className="p-6 max-w-md mx-auto bg-white rounded shadow-md">
+                <h2 className="text-2xl font-bold mb-4 text-gray-800">Admin Login</h2>
+                <form onSubmit={handleLogin} className="space-y-4">
+                  <input
+                    type="text"
+                    placeholder="Username"
+                    className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-600"
+                    value={loginData.username}
+                    onChange={(e) => setLoginData({ ...loginData, username: e.target.value })}
+                    required
+                  />
+                  <input
+                    type="password"
+                    placeholder="Password"
+                    className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-600"
+                    value={loginData.password}
+                    onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
+                    required
+                  />
+                  <button
+                    type="submit"
+                    className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition"
+                  >
+                    Login
+                  </button>
+                </form>
+              </div>
+            );
+          case 'dashboard':
+            return (
+              <div className="p-6">
+                <h2 className="text-2xl font-bold mb-4">{t('dashboard')}</h2>
+                <p>Manage your logistics operations here. View analytics, track drivers, and more.</p>
+              </div>
+            );
+          case 'drivers':
+            return (
+              <div className="p-6">
+                <h2 className="text-2xl font-bold mb-4">{t('drivers')}</h2>
+                <p>Manage driver profiles, verify documents, and view analytics.</p>
+              </div>
+            );
+          case 'loads':
+            return (
+              <div className="p-6">
+                <h2 className="text-2xl font-bold mb-4">{t('loads')}</h2>
+                <p>Create, edit, and track loads with AI suggestions and compliance checks.</p>
+              </div>
+            );
+          case 'reports':
+            return (
+              <div className="p-6">
+                <h2 className="text-2xl font-bold mb-4">{t('reports')}</h2>
+                <p>View completed loads, revenue charts, and performance reports.</p>
+              </div>
+            );
+          case 'audit_logs':
+            return (
+              <div className="p-6">
+                <h2 className="text-2xl font-bold mb-4">{t('audit_logs')}</h2>
+                <p>View admin actions and system logs (admin only).</p>
+              </div>
+            );
+          case 'tracking':
+            return (
+              <div className="p-6">
+                <h2 className="text-2xl font-bold mb-4">{t('tracking')}</h2>
+                <p>Track drivers in real-time with Google Maps integration.</p>
+              </div>
+            );
+          case 'client_portal':
+            return (
+              <div className="p-6">
+                <h2 className="text-2xl font-bold mb-4">{t('client_portal')}</h2>
+                <p>Access load tracking, invoices, and feedback system for clients.</p>
+              </div>
+            );
+          case 'about':
+            return (
+              <div className="p-6">
+                <h2 className="text-2xl font-bold mb-4">About Us</h2>
+                <p>Learn more about Elite Truck Dispatching and our mission.</p>
+              </div>
+            );
+          case 'contact':
+            return (
+              <div className="p-6">
+                <h2 className="text-2xl font-bold mb-4">Contact Us</h2>
+                <p>Get in touch with us for more information.</p>
+              </div>
+            );
+          default:
+            return <div className="p-6">Page not found</div>;
+        }
+      };
+
+      return (
+        <div className="min-h-screen bg-gray-100">
+          {renderView()}
+          {/* Footer */}
+          <footer className="bg-blue-600 text-white p-4 mt-8 text-center">
+            <p>© 2025 Elite Truck Dispatching. All rights reserved.</p>
+            <p>Contact: info@[yourwebsite.com] | USA/Canada Dispatching Services</p>
+          </footer>
+        </div>
+      );
+    };
+
+    ReactDOM.render(<App />, document.getElementById('root'));
+  </script>
+</body>
+</html>
